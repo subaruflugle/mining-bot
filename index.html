@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>⛏️ التعدين السحابي</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:radial-gradient(circle at 50% 0%,#1a1f4a 0%,#0a0e1f 60%,#05070f 100%);
+  color:#fff;min-height:100vh;overflow:hidden;user-select:none;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 20% 30%,rgba(255,215,0,.08),transparent 40%),
+             radial-gradient(circle at 80% 70%,rgba(0,200,255,.06),transparent 40%);
+}
+.container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px;position:relative;z-index:1}
+.greeting{text-align:center;font-size:14px;color:rgba(255,255,255,.6)}
+.greeting b{color:#ffd700}
+.balance-card{
+  background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,150,0,.06));
+  border:1px solid rgba(255,215,0,.25);border-radius:24px;
+  padding:24px;text-align:center;backdrop-filter:blur(20px);
+  box-shadow:0 8px 32px rgba(255,200,0,.1);
+}
+.balance-label{font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.5);margin-bottom:8px}
+.balance-value{
+  font-size:48px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,#ffd700 0%,#ffb000 50%,#ff9500 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px rgba(255,200,0,.4));
+  transition:transform .3s;
+}
+.balance-value.bump{transform:scale(1.15)}
+.mining-area{display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px 0}
+.ring-wrap{position:relative;width:200px;height:200px}
+.ring{transform:rotate(-90deg);width:100%;height:100%}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:8}
+.ring-fg{
+  fill:none;stroke:url(#goldGrad);stroke-width:8;stroke-linecap:round;
+  stroke-dasharray:565.5;stroke-dashoffset:565.5;
+  transition:stroke-dashoffset 1s linear;
+  filter:drop-shadow(0 0 8px rgba(255,200,0,.6));
+}
+.coin{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:80px;animation:float 3s ease-in-out infinite;
+}
+.coin.mining{animation:pulse 1.2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(255,200,0,.4))}
+50%{transform:scale(1.08);filter:drop-shadow(0 0 40px rgba(255,200,0,.9))}}
+.timer{font-size:22px;font-weight:700;color:#ffd700;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 20px rgba(255,200,0,.5);min-height:30px;text-align:center}
+.status{font-size:13px;color:rgba(255,255,255,.5);text-align:center;min-height:20px}
+.btn{
+  width:100%;padding:22px;border:none;border-radius:20px;font-size:17px;
+  font-weight:700;color:#fff;cursor:pointer;transition:all .2s;
+  background:linear-gradient(135deg,#00c853,#00a040);
+  box-shadow:0 8px 24px rgba(0,200,83,.35);letter-spacing:.5px;
+}
+.btn:active{transform:scale(.97)}
+.btn:disabled{background:rgba(255,255,255,.08);box-shadow:none;color:rgba(255,255,255,.4);cursor:not-allowed}
+.btn.claim{
+  background:linear-gradient(135deg,#ffd700,#ff9500);
+  box-shadow:0 8px 32px rgba(255,200,0,.6);
+  animation:glow 1.6s ease-in-out infinite;
+}
+@keyframes glow{0%,100%{box-shadow:0 8px 24px rgba(255,200,0,.5)}
+50%{box-shadow:0 8px 40px rgba(255,200,0,.9)}}
+.stats{display:flex;gap:12px}
+.stat{
+  flex:1;padding:14px;border-radius:16px;text-align:center;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(10px);
+}
+.stat-val{font-size:18px;font-weight:700;color:#fff}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,.5);margin-top:4px;letter-spacing:1px}
+</style>
+</head>
+<body>
+<svg width="0" height="0"><defs>
+  <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#ffd700"/><stop offset="100%" stop-color="#ff9500"/>
+  </linearGradient>
+</defs></svg>
+
+<div class="container">
+  <div class="greeting">أهلاً <b id="name">Miner</b> 👋</div>
+  <div class="balance-card">
+    <div class="balance-label">💰 رصيدك الحالي</div>
+    <div class="balance-value" id="balance">0</div>
+  </div>
+  <div class="mining-area">
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="90"/>
+        <circle class="ring-fg" id="ring" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="coin" id="coin">🪙</div>
+    </div>
+    <div class="timer" id="timer">—</div>
+    <div class="status" id="status">جاهز للبدء</div>
+  </div>
+  <button class="btn" id="btn">⛏️ ابدأ التعدين</button>
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="total">0</div><div class="stat-lbl">إجمالي المستخرج</div></div>
+    <div class="stat"><div class="stat-val" id="rate">1000</div><div class="stat-lbl">مكافأة الدورة</div></div>
+  </div>
+</div>
+
+<script>
+// ⚠️ غيّر ده لرابط السيرفر بتاعك على Render بعد الرفع
+const API_URL = 'https://YOUR-BACKEND.onrender.com';
+
+const tg = window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
+tg?.setHeaderColor?.('#0a0e1f'); tg?.setBackgroundColor?.('#0a0e1f');
+const initData = tg?.initData || '';
+const $ = id => document.getElementById(id);
+const CIRC = 2 * Math.PI * 90;
+let state = null, ticker = null;
+
+async function api(ep) {
+  const r = await fetch(`${API_URL}${ep}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ initData })
+  });
+  return r.json();
+}
+function fmt(ms){
+  if(ms<0) ms=0;
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function render(){
+  if(!state) return;
+  $('name').textContent = state.name;
+  $('balance').textContent = state.balance.toLocaleString('en-US');
+  $('total').textContent = state.totalMined.toLocaleString('en-US');
+  $('rate').textContent = state.reward.toLocaleString('en-US');
+  const btn=$('btn'), ring=$('ring'), timer=$('timer'), status=$('status'), coin=$('coin');
+  if(!state.startedAt){
+    ring.style.strokeDashoffset = CIRC; timer.textContent = '—';
+    status.textContent = 'جاهز للبدء';
+    btn.textContent = '⛏️ ابدأ التعدين';
+    btn.className='btn'; btn.disabled=false;
+    coin.classList.remove('mining');
+    if(ticker){clearInterval(ticker);ticker=null}
+    return;
+  }
+  const elapsed = Date.now()-state.startedAt;
+  const remaining = state.duration-elapsed;
+  const progress = Math.min(elapsed/state.duration,1);
+  ring.style.strokeDashoffset = CIRC*(1-progress);
+  if(remaining>0){
+    timer.textContent = fmt(remaining);
+    status.textContent = '⏳ جاري التعدين السحابي...';
+    btn.textContent = '⏳ قيد التعدين'; btn.className='btn'; btn.disabled=true;
+    coin.classList.add('mining');
+  } else {
+    timer.textContent = '✨ جاهز!';
+    status.textContent = `مكافأتك: ${state.reward.toLocaleString('en-US')} نقطة`;
+    btn.textContent = `🎁 اجمع ${state.reward.toLocaleString('en-US')}`;
+    btn.className='btn claim'; btn.disabled=false;
+    coin.classList.remove('mining');
+    if(ticker){clearInterval(ticker);ticker=null}
+  }
+}
+async function refresh(){ state = await api('/api/state'); render(); }
+$('btn').addEventListener('click', async ()=>{
+  tg?.HapticFeedback?.impactOccurred('medium');
+  if(!state.startedAt){
+    await api('/api/start'); await refresh();
+    if(!ticker) ticker = setInterval(render,1000);
+  } else if(Date.now()-state.startedAt >= state.duration){
+    const r = await api('/api/claim');
+    if(r.ok){
+      tg?.HapticFeedback?.notificationOccurred('success');
+      await refresh();
+      $('balance').classList.add('bump');
+      setTimeout(()=>$('balance').classList.remove('bump'),400);
+    }
+  }
+});
+(async ()=>{
+  await refresh();
+  if(state.startedAt && Date.now()-state.startedAt < state.duration)
+    ticker = setInterval(render,1000);
+})();
+</script>
+</body>
+</html>
